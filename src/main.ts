@@ -40,7 +40,7 @@ bus.addEventListener("cursor-changed", () => {
 });
 const firstLineIndex = 0;
 const lines: { x: number, y: number }[][] = [];
-const redoLines: { x: number, y: number }[] = [];
+const redoLines: { x: number, y: number }[][] = [];
 
 const origin: { x: number, y: number } = { x: 0, y: 0 };
 let currentLine: { x: number, y: number }[] = [];
@@ -108,5 +108,29 @@ app.append(clearButton);
 
 clearButton.addEventListener("click", () => {
     lines.splice(firstLineIndex, lines.length);
+    notify("drawing-changed");
+});
+
+const undoButton = document.createElement("button");
+undoButton.innerHTML = "undo";
+app.append(undoButton);
+
+const redoButton = document.createElement("button");
+redoButton.innerHTML = "redo";
+app.append(redoButton);
+
+undoButton.addEventListener("click", () => {
+    if (lines.length) {
+        const line: { x: number, y: number }[] = lines.pop()!;
+        redoLines.push(line);
+    }
+    notify("drawing-changed");
+});
+
+redoButton.addEventListener("click", () => {
+    if (redoLines.length) {
+        const line: { x: number, y: number }[] = redoLines.pop()!;
+        lines.push(line);
+    }
     notify("drawing-changed");
 });
