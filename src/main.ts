@@ -102,9 +102,14 @@ canvas.addEventListener("mouseup", () => {
     notify("drawing-changed");
 });
 
+const toolsDiv = document.createElement("div");
+toolsDiv.style.display = "flex";
+toolsDiv.style.justifyContent = "space-around";
+app.append(toolsDiv);
+
 const clearButton = document.createElement("button");
 clearButton.innerHTML = "clear";
-app.append(clearButton);
+toolsDiv.append(clearButton);
 
 clearButton.addEventListener("click", () => {
     lines.splice(firstLineIndex, lines.length);
@@ -113,11 +118,11 @@ clearButton.addEventListener("click", () => {
 
 const undoButton = document.createElement("button");
 undoButton.innerHTML = "undo";
-app.append(undoButton);
+toolsDiv.append(undoButton);
 
 const redoButton = document.createElement("button");
 redoButton.innerHTML = "redo";
-app.append(redoButton);
+toolsDiv.append(redoButton);
 
 undoButton.addEventListener("click", () => {
     if (lines.length) {
