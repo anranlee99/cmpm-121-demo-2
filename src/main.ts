@@ -31,18 +31,22 @@ toolDiv.style.flexDirection = "column";
 toolDiv.style.alignItems = "center";
 canvasDiv.append(toolDiv);
 
+let globalLineWidth = 2;
+const thicknessRef = { thin: 2, thick: 5 };
 const thinButton = document.createElement("button");
 thinButton.innerHTML = "thin";
 toolDiv.append(thinButton);
 thinButton.addEventListener("click", () => {
-  ctx.lineWidth = 2;
+  globalLineWidth = thicknessRef.thin;
+  notify("cursor-changed");
 });
 
 const thickButton = document.createElement("button");
 thickButton.innerHTML = "thick";
 toolDiv.append(thickButton);
 thickButton.addEventListener("click", () => {
-  ctx.lineWidth = 5;
+  globalLineWidth = thicknessRef.thick;
+  notify("cursor-changed");
 });
 
 class LineCommand {
@@ -70,6 +74,26 @@ class LineCommand {
     this.markers.push({ x, y });
   }
 }
+class CursorCommand {
+  x: number;
+  y: number;
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+  draw(width: number) {
+    ctx.beginPath();
+    const origin = 0;
+    const fullCircle = Math.PI + Math.PI;
+    ctx.arc(this.x, this.y, width, origin, fullCircle);
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fill();
+    ctx.closePath();
+  }
+}
+let cursorCommand: CursorCommand | null = null;
 
 const bus = new EventTarget();
 
@@ -78,12 +102,10 @@ function notify(name: string) {
 }
 
 bus.addEventListener("drawing-changed", () => {
-  console.log(lines);
   redraw();
 });
 //observer
 bus.addEventListener("cursor-changed", () => {
-  console.log(lines);
   redraw();
 });
 const firstLineIndex = 0;
@@ -97,12 +119,17 @@ function redraw() {
   for (const line of lines) {
     line.display(ctx);
   }
+  if (cursorCommand) {
+    cursorCommand.draw(ctx.lineWidth);
+  }
 }
 
 canvas.addEventListener("mousedown", (e) => {
   cursor.active = true;
   cursor.x = e.offsetX;
   cursor.y = e.offsetY;
+  ctx.lineWidth = globalLineWidth;
+  cursorCommand?.draw(ctx.lineWidth);
   const lineObject = new LineCommand(cursor.x, cursor.y, ctx.lineWidth);
   redoLines.splice(firstLineIndex, redoLines.length);
   lines.push(lineObject);
@@ -111,14 +138,15 @@ canvas.addEventListener("mousedown", (e) => {
 });
 
 canvas.addEventListener("mousemove", (e) => {
+  const x = e.offsetX;
+  const y = e.offsetY;
   if (cursor.active) {
-    const x = e.offsetX;
-    const y = e.offsetY;
     const decrement = -1;
     const newestLineIndex = lines.length + decrement;
     const line = lines[newestLineIndex];
     line.drag(x, y);
   }
+  cursorCommand = new CursorCommand(x, y);
   notify("cursor-changed");
 });
 
@@ -164,3 +192,10 @@ redoButton.addEventListener("click", () => {
   }
   notify("drawing-changed");
 });
+
+function updateLineWidth(): void {
+  ctx.lineWidth = globalLineWidth;
+  window.requestAnimationFrame(updateLineWidth);
+}
+
+window.requestAnimationFrame(updateLineWidth);
