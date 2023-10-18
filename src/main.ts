@@ -9,6 +9,10 @@ document.title = gameName;
 const header = document.createElement("h1");
 header.innerHTML = gameName;
 app.append(header);
+const canvasDiv = document.createElement("div");
+canvasDiv.style.display = "flex";
+canvasDiv.style.justifyContent = "space-between";
+app.append(canvasDiv);
 
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 //from https://shoddy-paint.glitch.me/paint0.html
@@ -19,16 +23,39 @@ canvas.style.borderRadius = "10%";
 canvas.style.setProperty("filter", "drop-shadow(5px 5px 5px #000)");
 canvas.style.backgroundColor = "white";
 const ctx = canvas.getContext("2d")!;
+canvasDiv.append(canvas);
+
+const toolDiv = document.createElement("div");
+toolDiv.style.display = "flex";
+toolDiv.style.flexDirection = "column";
+toolDiv.style.alignItems = "center";
+canvasDiv.append(toolDiv);
+
+const thinButton = document.createElement("button");
+thinButton.innerHTML = "thin";
+toolDiv.append(thinButton);
+thinButton.addEventListener("click", () => {
+  ctx.lineWidth = 2;
+});
+
+const thickButton = document.createElement("button");
+thickButton.innerHTML = "thick";
+toolDiv.append(thickButton);
+thickButton.addEventListener("click", () => {
+  ctx.lineWidth = 5;
+});
 
 class LineCommand {
   markers: { x: number; y: number }[];
-  constructor(startX: number, startY: number) {
+  thickness: number;
+  constructor(startX: number, startY: number, thickness: number) {
     this.markers = [{ x: startX, y: startY }];
+    this.thickness = thickness;
   }
 
   display(ctx: CanvasRenderingContext2D) {
     ctx.strokeStyle = "black";
-    ctx.lineWidth = 4;
+    ctx.lineWidth = this.thickness;
     ctx.beginPath();
 
     const firstMarker = this.markers[firstLineIndex];
@@ -43,9 +70,6 @@ class LineCommand {
     this.markers.push({ x, y });
   }
 }
-ctx.lineWidth = 2;
-
-app.append(canvas);
 
 const bus = new EventTarget();
 
@@ -70,18 +94,6 @@ const origin: { x: number; y: number } = { x: 0, y: 0 };
 const cursor = { active: false, x: 0, y: 0 };
 function redraw() {
   ctx.clearRect(origin.x, origin.y, canvas.width, canvas.height);
-  // const minPoints = 1;
-  // for (const line of lines) {
-  //   if (line.length > minPoints) {
-  //     ctx.beginPath();
-  //     const { x, y } = line[firstLineIndex];
-  //     ctx.moveTo(x, y);
-  //     for (const { x, y } of line) {
-  //       ctx.lineTo(x, y);
-  //     }
-  //     ctx.stroke();
-  //   }
-  // }
   for (const line of lines) {
     line.display(ctx);
   }
@@ -91,7 +103,7 @@ canvas.addEventListener("mousedown", (e) => {
   cursor.active = true;
   cursor.x = e.offsetX;
   cursor.y = e.offsetY;
-  const lineObject = new LineCommand(cursor.x, cursor.y);
+  const lineObject = new LineCommand(cursor.x, cursor.y, ctx.lineWidth);
   redoLines.splice(firstLineIndex, redoLines.length);
   lines.push(lineObject);
 
@@ -101,7 +113,7 @@ canvas.addEventListener("mousedown", (e) => {
 canvas.addEventListener("mousemove", (e) => {
   if (cursor.active) {
     const x = e.offsetX;
-      const y = e.offsetY;
+    const y = e.offsetY;
     const decrement = -1;
     const newestLineIndex = lines.length + decrement;
     const line = lines[newestLineIndex];
