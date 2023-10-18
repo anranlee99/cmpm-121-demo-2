@@ -49,6 +49,14 @@ thickButton.addEventListener("click", () => {
   notify("cursor-changed");
 });
 
+const sunglassesButton = document.createElement("button");
+sunglassesButton.innerHTML = "😎";
+toolDiv.append(sunglassesButton);
+sunglassesButton.addEventListener("click", (e) => {
+  cursorCommand = new CursorCommand(e.offsetX, e.offsetY, "😎");
+  notify("cursor-changed");
+});
+
 class LineCommand {
   markers: { x: number; y: number }[];
   thickness: number;
@@ -77,19 +85,26 @@ class LineCommand {
 class CursorCommand {
   x: number;
   y: number;
-  constructor(x: number, y: number) {
+  img: string;
+  constructor(x: number, y: number, img = "") {
     this.x = x;
     this.y = y;
+    this.img = img;
   }
   draw(width: number) {
     ctx.beginPath();
-    const origin = 0;
-    const fullCircle = Math.PI + Math.PI;
-    ctx.arc(this.x, this.y, width, origin, fullCircle);
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fill();
+    if (this.img) {
+      ctx.font = "32px monospace";
+      ctx.fillText(this.img, this.x, this.y);
+    } else {
+      const origin = 0;
+      const fullCircle = Math.PI + Math.PI;
+      ctx.arc(this.x, this.y, width, origin, fullCircle);
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fill();
+    }
     ctx.closePath();
   }
 }
@@ -106,6 +121,8 @@ bus.addEventListener("drawing-changed", () => {
 });
 //observer
 bus.addEventListener("cursor-changed", () => {
+  ctx.lineWidth = globalLineWidth;
+  cursorCommand?.draw(ctx.lineWidth);
   redraw();
 });
 const firstLineIndex = 0;
@@ -133,7 +150,7 @@ canvas.addEventListener("mousedown", (e) => {
   const lineObject = new LineCommand(cursor.x, cursor.y, ctx.lineWidth);
   redoLines.splice(firstLineIndex, redoLines.length);
   lines.push(lineObject);
-
+  cursorCommand = new CursorCommand(cursor.x, cursor.y, cursorCommand?.img);
   redraw();
 });
 
@@ -146,7 +163,7 @@ canvas.addEventListener("mousemove", (e) => {
     const line = lines[newestLineIndex];
     line.drag(x, y);
   }
-  cursorCommand = new CursorCommand(x, y);
+  cursorCommand = new CursorCommand(x, y, cursorCommand?.img);
   notify("cursor-changed");
 });
 
