@@ -57,6 +57,22 @@ sunglassesButton.addEventListener("click", (e) => {
   notify("cursor-changed");
 });
 
+const heartButton = document.createElement("button");
+heartButton.innerHTML = "❤️";
+toolDiv.append(heartButton);
+heartButton.addEventListener("click", (e) => {
+  cursorCommand = new CursorCommand(e.offsetX, e.offsetY, "❤️");
+  notify("cursor-changed");
+});
+
+const starButton = document.createElement("button");
+starButton.innerHTML = "⭐";
+toolDiv.append(starButton);
+starButton.addEventListener("click", (e) => {
+  cursorCommand = new CursorCommand(e.offsetX, e.offsetY, "⭐");
+  notify("cursor-changed");
+});
+
 class LineCommand {
   markers: { x: number; y: number }[];
   thickness: number;
