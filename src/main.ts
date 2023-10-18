@@ -19,6 +19,30 @@ canvas.style.borderRadius = "10%";
 canvas.style.setProperty("filter", "drop-shadow(5px 5px 5px #000)");
 canvas.style.backgroundColor = "white";
 const ctx = canvas.getContext("2d")!;
+
+class LineCommand {
+  markers: { x: number; y: number }[];
+  constructor(startX: number, startY: number) {
+    this.markers = [{ x: startX, y: startY }];
+  }
+
+  display(ctx: CanvasRenderingContext2D) {
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+
+    const firstMarker = this.markers[firstLineIndex];
+    ctx.moveTo(firstMarker.x, firstMarker.y);
+    for (const marker of this.markers) {
+      ctx.lineTo(marker.x, marker.y);
+    }
+    ctx.stroke();
+  }
+
+  drag(x: number, y: number) {
+    this.markers.push({ x, y });
+  }
+}
 ctx.lineWidth = 2;
 
 app.append(canvas);
@@ -26,80 +50,69 @@ app.append(canvas);
 const bus = new EventTarget();
 
 function notify(name: string) {
-    bus.dispatchEvent(new Event(name));
+  bus.dispatchEvent(new Event(name));
 }
 
 bus.addEventListener("drawing-changed", () => {
-    console.log(lines);
-    redraw();
+  console.log(lines);
+  redraw();
 });
 //observer
 bus.addEventListener("cursor-changed", () => {
-    console.log(lines);
-    redraw();
+  console.log(lines);
+  redraw();
 });
 const firstLineIndex = 0;
-const lines: { x: number, y: number }[][] = [];
-const redoLines: { x: number, y: number }[][] = [];
+const lines: LineCommand[] = [];
+const redoLines: LineCommand[] = [];
 
-const origin: { x: number, y: number } = { x: 0, y: 0 };
-let currentLine: { x: number, y: number }[] = [];
+const origin: { x: number; y: number } = { x: 0, y: 0 };
 const cursor = { active: false, x: 0, y: 0 };
 function redraw() {
-    ctx.clearRect(origin.x, origin.y, canvas.width, canvas.height);
-    const minPoints = 1;
-    for (const line of lines) {
-        if (line.length > minPoints) {
-            ctx.beginPath();
-            const { x, y } = line[firstLineIndex];
-            ctx.moveTo(x, y);
-            for (const { x, y } of line) {
-                ctx.lineTo(x, y);
-            }
-            ctx.stroke();
-        }
-    }
+  ctx.clearRect(origin.x, origin.y, canvas.width, canvas.height);
+  // const minPoints = 1;
+  // for (const line of lines) {
+  //   if (line.length > minPoints) {
+  //     ctx.beginPath();
+  //     const { x, y } = line[firstLineIndex];
+  //     ctx.moveTo(x, y);
+  //     for (const { x, y } of line) {
+  //       ctx.lineTo(x, y);
+  //     }
+  //     ctx.stroke();
+  //   }
+  // }
+  for (const line of lines) {
+    line.display(ctx);
+  }
 }
 
-
 canvas.addEventListener("mousedown", (e) => {
-    cursor.active = true;
-    cursor.x = e.offsetX;
-    cursor.y = e.offsetY;
+  cursor.active = true;
+  cursor.x = e.offsetX;
+  cursor.y = e.offsetY;
+  const lineObject = new LineCommand(cursor.x, cursor.y);
+  redoLines.splice(firstLineIndex, redoLines.length);
+  lines.push(lineObject);
 
-    //ONE array of points
-    currentLine = [];
-    //this just clears the redo array
-
-    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-    redoLines.splice(0, redoLines.length);
-    //record the new x,y's for the current line
-    currentLine.push({ x: cursor.x, y: cursor.y });
-    //save the line
-    lines.push(currentLine);
-
-    redraw();
+  redraw();
 });
 
-
 canvas.addEventListener("mousemove", (e) => {
-    if (cursor.active) {
-        const x = e.offsetX;
-        const y = e.offsetY;
-        ctx.beginPath();
-        ctx.moveTo(cursor.x, cursor.y);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-        cursor.x = x;
-        cursor.y = y;
-        currentLine.push({ x, y });
-    }
-    notify("cursor-changed");
+  if (cursor.active) {
+    const x = e.offsetX;
+      const y = e.offsetY;
+    const decrement = -1;
+    const newestLineIndex = lines.length + decrement;
+    const line = lines[newestLineIndex];
+    line.drag(x, y);
+  }
+  notify("cursor-changed");
 });
 
 canvas.addEventListener("mouseup", () => {
-    cursor.active = false;
-    notify("drawing-changed");
+  cursor.active = false;
+  notify("drawing-changed");
 });
 
 const toolsDiv = document.createElement("div");
@@ -112,8 +125,8 @@ clearButton.innerHTML = "clear";
 toolsDiv.append(clearButton);
 
 clearButton.addEventListener("click", () => {
-    lines.splice(firstLineIndex, lines.length);
-    notify("drawing-changed");
+  lines.splice(firstLineIndex, lines.length);
+  notify("drawing-changed");
 });
 
 const undoButton = document.createElement("button");
@@ -125,17 +138,17 @@ redoButton.innerHTML = "redo";
 toolsDiv.append(redoButton);
 
 undoButton.addEventListener("click", () => {
-    if (lines.length) {
-        const line: { x: number, y: number }[] = lines.pop()!;
-        redoLines.push(line);
-    }
-    notify("drawing-changed");
+  if (lines.length) {
+    const line: LineCommand = lines.pop()!;
+    redoLines.push(line);
+  }
+  notify("drawing-changed");
 });
 
 redoButton.addEventListener("click", () => {
-    if (redoLines.length) {
-        const line: { x: number, y: number }[] = redoLines.pop()!;
-        lines.push(line);
-    }
-    notify("drawing-changed");
+  if (redoLines.length) {
+    const line: LineCommand = redoLines.pop()!;
+    lines.push(line);
+  }
+  notify("drawing-changed");
 });
