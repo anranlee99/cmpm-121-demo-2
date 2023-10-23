@@ -74,11 +74,13 @@ starButton.addEventListener("click", (e) => {
 });
 
 class LineCommand {
-  markers: { x: number; y: number }[];
+  markers: { x: number; y: number; img: string }[];
   thickness: number;
-  constructor(startX: number, startY: number, thickness: number) {
-    this.markers = [{ x: startX, y: startY }];
+  img: string;
+  constructor(startX: number, startY: number, thickness: number, img = "") {
+    this.markers = [{ x: startX, y: startY, img }];
     this.thickness = thickness;
+    this.img = img;
   }
 
   display(ctx: CanvasRenderingContext2D) {
@@ -89,13 +91,18 @@ class LineCommand {
     const firstMarker = this.markers[firstLineIndex];
     ctx.moveTo(firstMarker.x, firstMarker.y);
     for (const marker of this.markers) {
-      ctx.lineTo(marker.x, marker.y);
+      if (marker.img) {
+        ctx.font = "32px monospace";
+        ctx.fillText(marker.img, marker.x, marker.y);
+      } else {
+        ctx.lineTo(marker.x, marker.y);
+      }
     }
     ctx.stroke();
   }
 
-  drag(x: number, y: number) {
-    this.markers.push({ x, y });
+  drag(x: number, y: number, img = "") {
+    this.markers.push({ x, y, img });
   }
 }
 class CursorCommand {
@@ -163,7 +170,12 @@ canvas.addEventListener("mousedown", (e) => {
   cursor.y = e.offsetY;
   ctx.lineWidth = globalLineWidth;
   cursorCommand?.draw(ctx.lineWidth);
-  const lineObject = new LineCommand(cursor.x, cursor.y, ctx.lineWidth);
+  const lineObject = new LineCommand(
+    cursor.x,
+    cursor.y,
+    ctx.lineWidth,
+    cursorCommand?.img
+  );
   redoLines.splice(firstLineIndex, redoLines.length);
   lines.push(lineObject);
   cursorCommand = new CursorCommand(cursor.x, cursor.y, cursorCommand?.img);
