@@ -36,16 +36,18 @@ const thicknessRef = { thin: 2, thick: 5 };
 const thinButton = document.createElement("button");
 thinButton.innerHTML = "thin";
 toolDiv.append(thinButton);
-thinButton.addEventListener("click", () => {
+thinButton.addEventListener("click", (e) => {
   globalLineWidth = thicknessRef.thin;
+  cursorCommand = new CursorCommand(e.offsetX, e.offsetY);
   notify("cursor-changed");
 });
 
 const thickButton = document.createElement("button");
 thickButton.innerHTML = "thick";
 toolDiv.append(thickButton);
-thickButton.addEventListener("click", () => {
+thickButton.addEventListener("click", (e) => {
   globalLineWidth = thicknessRef.thick;
+  cursorCommand = new CursorCommand(e.offsetX, e.offsetY);
   notify("cursor-changed");
 });
 
@@ -124,7 +126,7 @@ class CursorCommand {
       const fullCircle = Math.PI + Math.PI;
       ctx.arc(this.x, this.y, width, origin, fullCircle);
       ctx.strokeStyle = "black";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = globalLineWidth;
       ctx.stroke();
       ctx.fill();
     }
