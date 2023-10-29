@@ -67,11 +67,22 @@ blueSlider.type = "range";
 blueSlider.min = "0";
 blueSlider.max = "255";
 blueSlider.value = "0";
+
+redSlider.style.appearance = "none";
+greenSlider.style.appearance = "none";
+blueSlider.style.appearance = "none";
+
+redSlider.style.backgroundColor = `rgb(0,0,0)`;
+greenSlider.style.backgroundColor = `rgb(0,0,0)`;
+blueSlider.style.backgroundColor = `rgb(0,0,0)`;
+
 const colorDisplay = document.createElement("div");
 colorDisplay.style.width = "50px";
 colorDisplay.style.height = "50px";
 colorDisplay.style.border = "1px solid black";
+colorDisplay.style.borderRadius = "50%";
 colorDisplay.style.backgroundColor = "black";
+
 colorPickerDiv.append(redSlider);
 colorPickerDiv.append(greenSlider);
 colorPickerDiv.append(blueSlider);
@@ -80,17 +91,18 @@ toolDiv.append(colorPickerDiv);
 const colorRef = { red: 0, green: 0, blue: 0 };
 redSlider.addEventListener("input", () => {
   colorRef.red = parseInt(redSlider.value);
-  redSlider.style.color = `rgb(${colorRef.red},0,0)`;
+  redSlider.style.backgroundColor = `rgb(${colorRef.red},0,0)`;
   notify("color-changed");
 });
 greenSlider.addEventListener("input", () => {
   colorRef.green = parseInt(greenSlider.value);
-  greenSlider.style.color = `rgb(0,${colorRef.green},0)`;
+  greenSlider.style.backgroundColor = `rgb(0,${colorRef.green},0)`;
+
   notify("color-changed");
 });
 blueSlider.addEventListener("input", () => {
   colorRef.blue = parseInt(blueSlider.value);
-  blueSlider.style.color = `rgb(0,0,${colorRef.blue})`;
+  blueSlider.style.backgroundColor = `rgb(0,0,${colorRef.blue})`;
   notify("color-changed");
 });
 
