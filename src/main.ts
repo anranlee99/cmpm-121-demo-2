@@ -244,3 +244,22 @@ redoButton.addEventListener("click", () => {
   }
   notify("drawing-changed");
 });
+
+const exportButton = document.createElement("button");
+exportButton.innerHTML = "export";
+toolsDiv.append(exportButton);
+exportButton.addEventListener("click", () => {
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = 1024;
+  exportCanvas.height = 1024;
+  const exportCtx = exportCanvas.getContext("2d")!;
+  const scaleRatio = 4;
+  exportCtx.scale(scaleRatio, scaleRatio);
+  for (const line of lines) {
+    line.display(exportCtx);
+  }
+  const exportLink = document.createElement("a");
+  exportLink.href = exportCanvas.toDataURL("image/png");
+  exportLink.download = Date.now() + ".png";
+  exportLink.click();
+});
