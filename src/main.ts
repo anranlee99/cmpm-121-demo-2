@@ -51,29 +51,30 @@ thickButton.addEventListener("click", (e) => {
   notify("cursor-changed");
 });
 
-const sunglassesButton = document.createElement("button");
-sunglassesButton.innerHTML = "😎";
-toolDiv.append(sunglassesButton);
-sunglassesButton.addEventListener("click", (e) => {
-  cursorCommand = new CursorCommand(e.offsetX, e.offsetY, "😎");
-  notify("cursor-changed");
-});
+const stickerStrings = ["😎", "⭐", "❤️"];
+for (const stickerString of stickerStrings) {
+  createStickers(stickerString);
+}
 
-const heartButton = document.createElement("button");
-heartButton.innerHTML = "❤️";
-toolDiv.append(heartButton);
-heartButton.addEventListener("click", (e) => {
-  cursorCommand = new CursorCommand(e.offsetX, e.offsetY, "❤️");
-  notify("cursor-changed");
+const customStickerButton = document.createElement("button");
+customStickerButton.innerHTML = "➕";
+toolDiv.append(customStickerButton);
+customStickerButton.addEventListener("click", () => {
+  const stickerString = prompt("Enter a sticker:");
+  stickerStrings.push(stickerString!);
+  if (stickerString) {
+    createStickers(stickerString);
+  }
 });
-
-const starButton = document.createElement("button");
-starButton.innerHTML = "⭐";
-toolDiv.append(starButton);
-starButton.addEventListener("click", (e) => {
-  cursorCommand = new CursorCommand(e.offsetX, e.offsetY, "⭐");
-  notify("cursor-changed");
-});
+function createStickers(img: string) {
+  const stickerButton = document.createElement("button");
+  stickerButton.innerHTML = img;
+  toolDiv.append(stickerButton);
+  stickerButton.addEventListener("click", (e) => {
+    cursorCommand = new CursorCommand(e.offsetX, e.offsetY, img);
+    notify("cursor-changed");
+  });
+}
 
 class LineCommand {
   markers: { x: number; y: number; img: string }[];
@@ -116,7 +117,7 @@ class CursorCommand {
     this.y = y;
     this.img = img;
   }
-  draw(width: number) {
+  draw() {
     ctx.beginPath();
     if (this.img) {
       ctx.font = "32px monospace";
@@ -124,11 +125,15 @@ class CursorCommand {
     } else {
       const origin = 0;
       const fullCircle = Math.PI + Math.PI;
-      ctx.arc(this.x, this.y, width, origin, fullCircle);
+
+      // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+      const radius = globalLineWidth / 2;
+      ctx.arc(this.x, this.y, radius, origin, fullCircle);
       ctx.strokeStyle = "black";
-      ctx.lineWidth = globalLineWidth;
+      ctx.lineWidth = 1;
       ctx.stroke();
       ctx.fill();
+      ctx.lineWidth = globalLineWidth;
     }
     ctx.closePath();
   }
@@ -147,7 +152,7 @@ bus.addEventListener("drawing-changed", () => {
 //observer
 bus.addEventListener("cursor-changed", () => {
   ctx.lineWidth = globalLineWidth;
-  cursorCommand?.draw(ctx.lineWidth);
+  cursorCommand?.draw();
   redraw();
 });
 const firstLineIndex = 0;
@@ -162,7 +167,7 @@ function redraw() {
     line.display(ctx);
   }
   if (cursorCommand) {
-    cursorCommand.draw(ctx.lineWidth);
+    cursorCommand.draw();
   }
 }
 
@@ -171,7 +176,7 @@ canvas.addEventListener("mousedown", (e) => {
   cursor.x = e.offsetX;
   cursor.y = e.offsetY;
   ctx.lineWidth = globalLineWidth;
-  cursorCommand?.draw(ctx.lineWidth);
+  cursorCommand?.draw();
   const lineObject = new LineCommand(
     cursor.x,
     cursor.y,
@@ -239,10 +244,3 @@ redoButton.addEventListener("click", () => {
   }
   notify("drawing-changed");
 });
-
-function updateLineWidth(): void {
-  ctx.lineWidth = globalLineWidth;
-  window.requestAnimationFrame(updateLineWidth);
-}
-
-window.requestAnimationFrame(updateLineWidth);
