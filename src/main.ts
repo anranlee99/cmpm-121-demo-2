@@ -12,8 +12,9 @@ app.append(header);
 const canvasDiv = document.createElement("div");
 canvasDiv.style.display = "flex";
 canvasDiv.style.justifyContent = "space-between";
-app.append(canvasDiv);
 
+canvasDiv.id = "canvasDiv";
+app.append(canvasDiv);
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 //from https://shoddy-paint.glitch.me/paint0.html
 canvas.width = 256;
@@ -29,7 +30,74 @@ const toolDiv = document.createElement("div");
 toolDiv.style.display = "flex";
 toolDiv.style.flexDirection = "column";
 toolDiv.style.alignItems = "center";
+toolDiv.id = "toolDiv";
 canvasDiv.append(toolDiv);
+
+const stickersDiv = document.createElement("div");
+stickersDiv.style.display = "flex";
+stickersDiv.style.flexDirection = "column";
+stickersDiv.style.alignItems = "center";
+stickersDiv.id = "stickersDiv";
+canvasDiv.append(stickersDiv);
+
+const toolsDiv = document.createElement("div");
+toolsDiv.style.display = "flex";
+toolsDiv.style.flexDirection = "column";
+toolsDiv.style.alignItems = "center";
+toolsDiv.id = "toolsDiv";
+canvasDiv.append(toolsDiv);
+
+let cursorCommand: CursorCommand | null = null;
+
+const colorPickerDiv = document.createElement("div");
+colorPickerDiv.style.display = "flex";
+colorPickerDiv.style.flexDirection = "column";
+const redSlider = document.createElement("input");
+redSlider.type = "range";
+redSlider.min = "0";
+redSlider.max = "255";
+redSlider.value = "0";
+const greenSlider = document.createElement("input");
+greenSlider.type = "range";
+greenSlider.min = "0";
+greenSlider.max = "255";
+greenSlider.value = "0";
+const blueSlider = document.createElement("input");
+blueSlider.type = "range";
+blueSlider.min = "0";
+blueSlider.max = "255";
+blueSlider.value = "0";
+const colorDisplay = document.createElement("div");
+colorDisplay.style.width = "50px";
+colorDisplay.style.height = "50px";
+colorDisplay.style.border = "1px solid black";
+colorDisplay.style.backgroundColor = "black";
+colorPickerDiv.append(redSlider);
+colorPickerDiv.append(greenSlider);
+colorPickerDiv.append(blueSlider);
+colorPickerDiv.append(colorDisplay);
+toolDiv.append(colorPickerDiv);
+const colorRef = { red: 0, green: 0, blue: 0 };
+redSlider.addEventListener("input", () => {
+  colorRef.red = parseInt(redSlider.value);
+  redSlider.style.color = `rgb(${colorRef.red},0,0)`;
+  notify("color-changed");
+});
+greenSlider.addEventListener("input", () => {
+  colorRef.green = parseInt(greenSlider.value);
+  greenSlider.style.color = `rgb(0,${colorRef.green},0)`;
+  notify("color-changed");
+});
+blueSlider.addEventListener("input", () => {
+  colorRef.blue = parseInt(blueSlider.value);
+  blueSlider.style.color = `rgb(0,0,${colorRef.blue})`;
+  notify("color-changed");
+});
+
+colorDisplay.addEventListener("color-changed", () => {
+  console.log("color changed");
+  colorDisplay.style.backgroundColor = `rgb(${colorRef.red},${colorRef.green},${colorRef.blue})`;
+});
 
 let globalLineWidth = 2;
 const thicknessRef = { thin: 2, thick: 5 };
@@ -69,7 +137,7 @@ customStickerButton.addEventListener("click", () => {
 function createStickers(img: string) {
   const stickerButton = document.createElement("button");
   stickerButton.innerHTML = img;
-  toolDiv.append(stickerButton);
+  stickersDiv.append(stickerButton);
   stickerButton.addEventListener("click", (e) => {
     cursorCommand = new CursorCommand(e.offsetX, e.offsetY, img);
     notify("cursor-changed");
@@ -80,14 +148,22 @@ class LineCommand {
   markers: { x: number; y: number; img: string }[];
   thickness: number;
   img: string;
-  constructor(startX: number, startY: number, thickness: number, img = "") {
+  color: string;
+  constructor(
+    startX: number,
+    startY: number,
+    thickness: number,
+    color: string,
+    img = ""
+  ) {
     this.markers = [{ x: startX, y: startY, img }];
     this.thickness = thickness;
     this.img = img;
+    this.color = color;
   }
 
   display(ctx: CanvasRenderingContext2D) {
-    ctx.strokeStyle = "black";
+    ctx.strokeStyle = this.color;
     ctx.lineWidth = this.thickness;
     ctx.beginPath();
 
@@ -95,7 +171,7 @@ class LineCommand {
     ctx.moveTo(firstMarker.x, firstMarker.y);
     for (const marker of this.markers) {
       if (marker.img) {
-        ctx.font = "32px monospace";
+        ctx.font = "24px monospace";
         ctx.fillText(marker.img, marker.x, marker.y);
       } else {
         ctx.lineTo(marker.x, marker.y);
@@ -120,7 +196,7 @@ class CursorCommand {
   draw() {
     ctx.beginPath();
     if (this.img) {
-      ctx.font = "32px monospace";
+      ctx.font = "24px monospace";
       ctx.fillText(this.img, this.x, this.y);
     } else {
       const origin = 0;
@@ -129,7 +205,8 @@ class CursorCommand {
       // eslint-disable-next-line @typescript-eslint/no-magic-numbers
       const radius = globalLineWidth / 2;
       ctx.arc(this.x, this.y, radius, origin, fullCircle);
-      ctx.strokeStyle = "black";
+      ctx.strokeStyle = `rgb(${colorRef.red},${colorRef.green},${colorRef.blue})`;
+      ctx.fillStyle = `rgb(${colorRef.red},${colorRef.green},${colorRef.blue})`;
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.fill();
@@ -138,7 +215,6 @@ class CursorCommand {
     ctx.closePath();
   }
 }
-let cursorCommand: CursorCommand | null = null;
 
 const bus = new EventTarget();
 
@@ -146,6 +222,10 @@ function notify(name: string) {
   bus.dispatchEvent(new Event(name));
 }
 
+bus.addEventListener("color-changed", () => {
+  ctx.strokeStyle = `rgb(${colorRef.red},${colorRef.green},${colorRef.blue})`;
+  colorDisplay.style.backgroundColor = `rgb(${colorRef.red},${colorRef.green},${colorRef.blue})`;
+});
 bus.addEventListener("drawing-changed", () => {
   redraw();
 });
@@ -181,6 +261,7 @@ canvas.addEventListener("mousedown", (e) => {
     cursor.x,
     cursor.y,
     ctx.lineWidth,
+    `rgb(${colorRef.red},${colorRef.green},${colorRef.blue})`,
     cursorCommand?.img
   );
   redoLines.splice(firstLineIndex, redoLines.length);
@@ -206,11 +287,6 @@ canvas.addEventListener("mouseup", () => {
   cursor.active = false;
   notify("drawing-changed");
 });
-
-const toolsDiv = document.createElement("div");
-toolsDiv.style.display = "flex";
-toolsDiv.style.justifyContent = "space-around";
-app.append(toolsDiv);
 
 const clearButton = document.createElement("button");
 clearButton.innerHTML = "clear";
